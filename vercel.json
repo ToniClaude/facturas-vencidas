@@ -1,4 +1,5 @@
 {
-  "buildCommand": "echo 'Static app - no build needed'",
-  "outputDirectory": "."
+  "buildCommand": "",
+  "outputDirectory": ".",
+  "public": "."
 }
