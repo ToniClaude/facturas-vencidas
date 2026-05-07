@@ -376,17 +376,16 @@
             <th onclick="sortTable('id')">Factura ↕</th>
             <th onclick="sortTable('dias')">Días ↕</th>
             <th onclick="sortTable('empresa')">Empresa ↕</th>
-            <th onclick="sortTable('local')">Local ↕</th>
             <th onclick="sortTable('importe')">Importe ↕</th>
-            <th>Forma</th>
-            <th>Plazo</th>
             <th>Última Gestión</th>
             <th>Estado</th>
             <th>Acciones</th>
+            <th>Forma</th>
+            <th>Plazo</th>
           </tr>
         </thead>
         <tbody id="tablebody">
-          <tr><td colspan="10" style="text-align: center; padding: 30px; color: #999;">Cargando facturas...</td></tr>
+          <tr><td colspan="9" style="text-align: center; padding: 30px; color: #999;">Cargando facturas...</td></tr>
         </tbody>
       </table>
     </div>
@@ -557,10 +556,7 @@
             <td><strong>${f.id}</strong></td>
             <td><span class="dias-badge ${diasClass}">${f.dias}d</span></td>
             <td>${f.empresa}</td>
-            <td>${f.local}</td>
             <td>€${parseFloat(f.importe).toFixed(2)}</td>
-            <td>${f.forma}</td>
-            <td>${f.plazo}</td>
             <td style="font-size: 12px; color: #d32f2f;">${lastGestion}</td>
             <td>
               <select class="estado-select estado-${estado}" onchange="cambiarEstado('${f.id}', this.value)">
@@ -572,6 +568,8 @@
             <td>
               <button class="btn btn-secondary" onclick="openModal('${f.id}')">Gestiones</button>
             </td>
+            <td>${f.forma}</td>
+            <td>${f.plazo}</td>
           </tr>
         `;
       }).join('');
