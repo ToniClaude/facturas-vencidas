@@ -356,6 +356,10 @@
         </div>
       </div>
 
+      <div style="margin-bottom: 15px; text-align: right;">
+        <button class="btn btn-primary" onclick="exportarExcel()" style="margin: 0;">📥 Exportar a Excel</button>
+      </div>
+
       <div class="stats">
         <div class="stat-box">
           <div class="stat-number" id="totalFacturas">0</div>
@@ -708,6 +712,44 @@
       } catch (err) {
         alert('Error actualizando estado: ' + err.message);
       }
+    }
+
+    // ============ EXPORT ============
+    function exportarExcel() {
+      const filtered = getFilteredFacturas();
+
+      if (filtered.length === 0) {
+        alert('No hay datos para exportar');
+        return;
+      }
+
+      const headers = ['Factura', 'Días', 'Empresa', 'Importe', 'Última Gestión', 'Estado', 'Forma', 'Plazo'];
+      const rows = filtered.map(f => [
+        f.id,
+        f.dias,
+        f.empresa,
+        parseFloat(f.importe).toFixed(2),
+        gestiones[f.id] || '-',
+        estados[f.id] || 'activa',
+        f.forma,
+        f.plazo
+      ]);
+
+      const csv = [headers, ...rows].map(row =>
+        row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
+      ).join('\n');
+
+      const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+
+      link.setAttribute('href', url);
+      link.setAttribute('download', `facturas-${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
 
     // ============ EVENT LISTENERS ============
