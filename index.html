@@ -319,11 +319,17 @@
       <div class="filters">
         <div class="filter-group">
           <label>Empresa</label>
-          <input type="text" id="filterEmpresa" placeholder="Filtrar por empresa...">
+          <div style="display: flex; gap: 5px; align-items: flex-end;">
+            <input type="text" id="filterEmpresa" placeholder="Filtrar por empresa..." style="flex: 1;">
+            <button id="toggleExcluirEmpresa" class="btn btn-secondary" style="margin: 0; padding: 10px;">Incluir</button>
+          </div>
         </div>
         <div class="filter-group">
           <label>Local</label>
-          <input type="text" id="filterLocal" placeholder="Filtrar por local...">
+          <div style="display: flex; gap: 5px; align-items: flex-end;">
+            <input type="text" id="filterLocal" placeholder="Filtrar por local..." style="flex: 1;">
+            <button id="toggleExcluirLocal" class="btn btn-secondary" style="margin: 0; padding: 10px;">Incluir</button>
+          </div>
         </div>
         <div class="filter-group">
           <label>Estado</label>
@@ -372,6 +378,7 @@
             <th onclick="sortTable('importe')">Importe ↕</th>
             <th>Forma</th>
             <th>Plazo</th>
+            <th>Última Gestión</th>
             <th>Estado</th>
             <th>Acciones</th>
           </tr>
@@ -492,17 +499,21 @@
     // ============ STATE ============
     let facturas = [];
     let estados = {};
+    let gestiones = {};
     let sortBy = 'dias';
     let sortOrder = 'desc';
+    let excluirEmpresa = false;
+    let excluirLocal = false;
 
     // ============ LOAD DATA ============
     async function loadData() {
       try {
         checkKey();
 
-        const [facturasData, estadosData] = await Promise.all([
+        const [facturasData, estadosData, gestionesData] = await Promise.all([
           supabase.getFacturas(),
-          supabase.getEstados()
+          supabase.getEstados(),
+          supabase.request('GET', '/gestiones')
         ]);
 
         facturas = facturasData;
@@ -510,11 +521,17 @@
           estados[e.factura_id] = e.valor;
         });
 
+        gestionesData.forEach(g => {
+          if (!gestiones[g.factura_id] || new Date(g.fecha) > new Date(gestiones[g.factura_id])) {
+            gestiones[g.factura_id] = g.fecha;
+          }
+        });
+
         renderTable();
         updateStats();
       } catch (err) {
         console.error('Error loading data:', err);
-        document.getElementById('tablebody').innerHTML = `<tr><td colspan="9" style="text-align: center; color: red; padding: 20px;">Error cargando datos: ${err.message}</td></tr>`;
+        document.getElementById('tablebody').innerHTML = `<tr><td colspan="10" style="text-align: center; color: red; padding: 20px;">Error cargando datos: ${err.message}</td></tr>`;
       }
     }
 
@@ -530,7 +547,8 @@
 
       tbody.innerHTML = filtered.map(f => {
         const estado = estados[f.id] || 'activa';
-        const diasClass = f.dias > 90 ? 'dias-high' : f.dias > 60 ? 'dias-medium' : 'dias-low';
+        const diasClass = f.dias >= 30 ? 'dias-high' : f.dias >= 5 ? 'dias-medium' : 'dias-low';
+        const lastGestion = gestiones[f.id] || '-';
 
         return `
           <tr>
@@ -541,6 +559,7 @@
             <td>€${parseFloat(f.importe).toFixed(2)}</td>
             <td>${f.forma}</td>
             <td>${f.plazo}</td>
+            <td style="font-size: 12px; color: #666;">${lastGestion}</td>
             <td>
               <select class="estado-select estado-${estado}" onchange="cambiarEstado('${f.id}', this.value)">
                 <option value="activa" ${estado === 'activa' ? 'selected' : ''}>Activa</option>
@@ -564,8 +583,16 @@
       const dias = parseInt(document.getElementById('filterDias').value) || 0;
 
       return facturas.filter(f => {
-        if (empresa && !f.empresa.toLowerCase().includes(empresa)) return false;
-        if (local && !f.local.toLowerCase().includes(local)) return false;
+        if (empresa) {
+          const empresaMatch = f.empresa.toLowerCase().includes(empresa);
+          if (excluirEmpresa && empresaMatch) return false;
+          if (!excluirEmpresa && !empresaMatch) return false;
+        }
+        if (local) {
+          const localMatch = f.local.toLowerCase().includes(local);
+          if (excluirLocal && localMatch) return false;
+          if (!excluirLocal && !localMatch) return false;
+        }
         if (estado && (estados[f.id] || 'activa') !== estado) return false;
         if (dias && f.dias <= dias) return false;
         return true;
@@ -694,6 +721,20 @@
       updateStats();
     });
     document.getElementById('filterDias').addEventListener('change', () => {
+      renderTable();
+      updateStats();
+    });
+
+    document.getElementById('toggleExcluirEmpresa').addEventListener('click', () => {
+      excluirEmpresa = !excluirEmpresa;
+      document.getElementById('toggleExcluirEmpresa').textContent = excluirEmpresa ? 'Excluir' : 'Incluir';
+      renderTable();
+      updateStats();
+    });
+
+    document.getElementById('toggleExcluirLocal').addEventListener('click', () => {
+      excluirLocal = !excluirLocal;
+      document.getElementById('toggleExcluirLocal').textContent = excluirLocal ? 'Excluir' : 'Incluir';
       renderTable();
       updateStats();
     });
