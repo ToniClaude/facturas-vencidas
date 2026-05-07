@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seguimiento de Facturas Vencidas</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+      color: #333;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    header {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 20px;
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    label {
+      font-weight: 600;
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    input[type="text"],
+    select {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    input[type="text"]:focus,
+    select:focus {
+      outline: none;
+      border-color: #4CAF50;
+      box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+    }
+
+    .table-container {
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead {
+      background: #f9f9f9;
+      border-bottom: 2px solid #eee;
+    }
+
+    th {
+      padding: 15px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 12px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    th:hover {
+      background: #f0f0f0;
+    }
+
+    td {
+      padding: 15px;
+      border-bottom: 1px solid #eee;
+    }
+
+    tr:hover {
+      background: #fafafa;
+    }
+
+    .dias-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 12px;
+    }
+
+    .dias-high {
+      background: #ffebee;
+      color: #c62828;
+    }
+
+    .dias-medium {
+      background: #fff3e0;
+      color: #e65100;
+    }
+
+    .dias-low {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    .estado-select {
+      padding: 6px 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .estado-activa { background: #c8e6c9; color: #1b5e20; }
+    .estado-pagada { background: #bbdefb; color: #0d47a1; }
+    .estado-descartada { background: #efebe9; color: #3e2723; }
+
+    .btn {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: #4CAF50;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #45a049;
+    }
+
+    .btn-secondary {
+      background: #2196F3;
+      color: white;
+      margin-right: 5px;
+    }
+
+    .btn-secondary:hover {
+      background: #0b7dda;
+    }
+
+    .btn-danger {
+      background: #f44336;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #da190b;
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    }
+
+    .modal h2 {
+      margin-bottom: 20px;
+      font-size: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+
+    .gestiones-list {
+      margin-top: 15px;
+      font-size: 13px;
+    }
+
+    .gestion-item {
+      background: #f9f9f9;
+      padding: 10px;
+      margin-bottom: 8px;
+      border-radius: 4px;
+      border-left: 3px solid #4CAF50;
+    }
+
+    .gestion-fecha {
+      font-weight: 600;
+      color: #666;
+    }
+
+    .gestion-medio {
+      color: #999;
+      font-size: 12px;
+    }
+
+    .gestion-comentario {
+      margin-top: 5px;
+      color: #333;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    .stat-box {
+      background: #f9f9f9;
+      padding: 15px;
+      border-radius: 4px;
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 24px;
+      font-weight: 700;
+      color: #4CAF50;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #999;
+      margin-top: 5px;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>📋 Seguimiento de Facturas Vencidas</h1>
+
+      <div class="filters">
+        <div class="filter-group">
+          <label>Empresa</label>
+          <input type="text" id="filterEmpresa" placeholder="Filtrar por empresa...">
+        </div>
+        <div class="filter-group">
+          <label>Local</label>
+          <input type="text" id="filterLocal" placeholder="Filtrar por local...">
+        </div>
+        <div class="filter-group">
+          <label>Estado</label>
+          <select id="filterEstado">
+            <option value="">Todos</option>
+            <option value="activa">Activa</option>
+            <option value="pagada">Pagada</option>
+            <option value="descartada">Descartada</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Días vencidos</label>
+          <select id="filterDias">
+            <option value="">Todos</option>
+            <option value="30">Más de 30 días</option>
+            <option value="60">Más de 60 días</option>
+            <option value="90">Más de 90 días</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat-box">
+          <div class="stat-number" id="totalFacturas">0</div>
+          <div class="stat-label">Total Facturas</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-number" id="totalImporte">€0.00</div>
+          <div class="stat-label">Importe Total</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-number" id="diasPromedio">0</div>
+          <div class="stat-label">Días Promedio</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th onclick="sortTable('id')">Factura ↕</th>
+            <th onclick="sortTable('dias')">Días ↕</th>
+            <th onclick="sortTable('empresa')">Empresa ↕</th>
+            <th onclick="sortTable('local')">Local ↕</th>
+            <th onclick="sortTable('importe')">Importe ↕</th>
+            <th>Forma</th>
+            <th>Plazo</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tablebody">
+          <tr><td colspan="9" style="text-align: center; padding: 30px; color: #999;">Cargando facturas...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal Gestiones -->
+  <div class="modal" id="modal">
+    <div class="modal-content">
+      <h2>Gestiones: <span id="modalFacturaId"></span></h2>
+
+      <div class="form-group">
+        <label>Fecha</label>
+        <input type="date" id="gestionFecha">
+      </div>
+
+      <div class="form-group">
+        <label>Medio</label>
+        <select id="gestionMedio">
+          <option value="">Selecciona medio...</option>
+          <option value="Email">Email</option>
+          <option value="Teléfono">Teléfono</option>
+          <option value="WhatsApp">WhatsApp</option>
+          <option value="Visita">Visita</option>
+          <option value="Otro">Otro</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Comentario</label>
+        <textarea id="gestionComentario" placeholder="Detalle de la gestión..."></textarea>
+      </div>
+
+      <div class="gestiones-list" id="gestionesList"></div>
+
+      <div class="modal-buttons">
+        <button class="btn btn-secondary" onclick="closeModal()">Cerrar</button>
+        <button class="btn btn-primary" onclick="guardarGestion()">Guardar Gestión</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ============ CONFIG ============
+    const SUPABASE_URL = 'https://lpgdgkwvbmzkgoapmvqe.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxwZ2Rna3d2Ym16a2dvYXBtdnFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5NTQ3MDksImV4cCI6MjA4OTUzMDcwOX0.dZBFPfRjwR2acM1W815bf8Ynyza0vyza-WS2kFdSps4';
+    const REQUIRED_KEY = 'MICLAVE123';
+
+    // ============ VALIDACIÓN DE CLAVE ============
+    function checkKey() {
+      const params = new URLSearchParams(window.location.search);
+      const key = params.get('key');
+
+      if (key !== REQUIRED_KEY) {
+        document.body.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; text-align: center;"><div><h1>🔐 Acceso Restringido</h1><p>Clave no válida o ausente. Necesitas ?key=MICLAVE123</p></div></div>';
+        throw new Error('Clave no válida');
+      }
+    }
+
+    // ============ SUPABASE CLIENT ============
+    const supabase = {
+      async request(method, endpoint, body = null) {
+        const url = `${SUPABASE_URL}/rest/v1${endpoint}`;
+        const options = {
+          method,
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          }
+        };
+        if (body) options.body = JSON.stringify(body);
+
+        const res = await fetch(url, options);
+        if (!res.ok) {
+          const err = await res.text();
+          console.error(`Error en ${endpoint}:`, err);
+          throw new Error(`${res.status}: ${err}`);
+        }
+        return res.json();
+      },
+
+      async getFacturas() {
+        return this.request('GET', '/facturas?order=dias.desc');
+      },
+
+      async getEstados() {
+        return this.request('GET', '/estados');
+      },
+
+      async getGestiones(facturaId) {
+        return this.request('GET', `/gestiones?factura_id=eq.${facturaId}&order=created_at.desc`);
+      },
+
+      async insertGestion(facturaId, fecha, medio, comentario) {
+        return this.request('POST', '/gestiones', {
+          factura_id: facturaId,
+          fecha,
+          medio,
+          comentario
+        });
+      },
+
+      async updateEstado(facturaId, valor) {
+        return this.request('POST', '/estados', {
+          factura_id: facturaId,
+          valor
+        });
+      }
+    };
+
+    // ============ STATE ============
+    let facturas = [];
+    let estados = {};
+    let sortBy = 'dias';
+    let sortOrder = 'desc';
+
+    // ============ LOAD DATA ============
+    async function loadData() {
+      try {
+        checkKey();
+
+        const [facturasData, estadosData] = await Promise.all([
+          supabase.getFacturas(),
+          supabase.getEstados()
+        ]);
+
+        facturas = facturasData;
+        estadosData.forEach(e => {
+          estados[e.factura_id] = e.valor;
+        });
+
+        renderTable();
+        updateStats();
+      } catch (err) {
+        console.error('Error loading data:', err);
+        document.getElementById('tablebody').innerHTML = `<tr><td colspan="9" style="text-align: center; color: red; padding: 20px;">Error cargando datos: ${err.message}</td></tr>`;
+      }
+    }
+
+    // ============ RENDER TABLE ============
+    function renderTable() {
+      const filtered = getFilteredFacturas();
+      const tbody = document.getElementById('tablebody');
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: #999; padding: 30px;">Sin resultados</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(f => {
+        const estado = estados[f.id] || 'activa';
+        const diasClass = f.dias > 90 ? 'dias-high' : f.dias > 60 ? 'dias-medium' : 'dias-low';
+
+        return `
+          <tr>
+            <td><strong>${f.id}</strong></td>
+            <td><span class="dias-badge ${diasClass}">${f.dias}d</span></td>
+            <td>${f.empresa}</td>
+            <td>${f.local}</td>
+            <td>€${parseFloat(f.importe).toFixed(2)}</td>
+            <td>${f.forma}</td>
+            <td>${f.plazo}</td>
+            <td>
+              <select class="estado-select estado-${estado}" onchange="cambiarEstado('${f.id}', this.value)">
+                <option value="activa" ${estado === 'activa' ? 'selected' : ''}>Activa</option>
+                <option value="pagada" ${estado === 'pagada' ? 'selected' : ''}>Pagada</option>
+                <option value="descartada" ${estado === 'descartada' ? 'selected' : ''}>Descartada</option>
+              </select>
+            </td>
+            <td>
+              <button class="btn btn-secondary" onclick="openModal('${f.id}')">Gestiones</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // ============ FILTER ============
+    function getFilteredFacturas() {
+      const empresa = document.getElementById('filterEmpresa').value.toLowerCase();
+      const local = document.getElementById('filterLocal').value.toLowerCase();
+      const estado = document.getElementById('filterEstado').value;
+      const dias = parseInt(document.getElementById('filterDias').value) || 0;
+
+      return facturas.filter(f => {
+        if (empresa && !f.empresa.toLowerCase().includes(empresa)) return false;
+        if (local && !f.local.toLowerCase().includes(local)) return false;
+        if (estado && (estados[f.id] || 'activa') !== estado) return false;
+        if (dias && f.dias <= dias) return false;
+        return true;
+      }).sort((a, b) => {
+        let aVal = a[sortBy];
+        let bVal = b[sortBy];
+        if (typeof aVal === 'string') {
+          aVal = aVal.toLowerCase();
+          bVal = bVal.toLowerCase();
+        }
+        return sortOrder === 'asc' ? aVal > bVal ? 1 : -1 : aVal < bVal ? 1 : -1;
+      });
+    }
+
+    // ============ SORT ============
+    function sortTable(col) {
+      if (sortBy === col) {
+        sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+      } else {
+        sortBy = col;
+        sortOrder = 'desc';
+      }
+      renderTable();
+    }
+
+    // ============ STATS ============
+    function updateStats() {
+      const filtered = getFilteredFacturas();
+      const total = filtered.length;
+      const importe = filtered.reduce((sum, f) => sum + parseFloat(f.importe), 0);
+      const diasPromedio = total > 0 ? Math.round(filtered.reduce((sum, f) => sum + f.dias, 0) / total) : 0;
+
+      document.getElementById('totalFacturas').textContent = total;
+      document.getElementById('totalImporte').textContent = '€' + importe.toFixed(2);
+      document.getElementById('diasPromedio').textContent = diasPromedio;
+    }
+
+    // ============ MODAL ============
+    let currentFacturaId = null;
+
+    async function openModal(facturaId) {
+      currentFacturaId = facturaId;
+      document.getElementById('modalFacturaId').textContent = facturaId;
+      document.getElementById('gestionFecha').valueAsDate = new Date();
+
+      try {
+        const gestiones = await supabase.getGestiones(facturaId);
+        renderGestiones(gestiones);
+      } catch (err) {
+        console.error('Error loading gestiones:', err);
+      }
+
+      document.getElementById('modal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('modal').classList.remove('active');
+      document.getElementById('gestionFecha').value = '';
+      document.getElementById('gestionMedio').value = '';
+      document.getElementById('gestionComentario').value = '';
+    }
+
+    function renderGestiones(gestiones) {
+      const list = document.getElementById('gestionesList');
+      if (gestiones.length === 0) {
+        list.innerHTML = '<p style="color: #999; text-align: center;">Sin gestiones registradas</p>';
+        return;
+      }
+      list.innerHTML = gestiones.map(g => `
+        <div class="gestion-item">
+          <div class="gestion-fecha">${g.fecha}</div>
+          <div class="gestion-medio">${g.medio}</div>
+          <div class="gestion-comentario">${g.comentario || '-'}</div>
+        </div>
+      `).join('');
+    }
+
+    async function guardarGestion() {
+      const fecha = document.getElementById('gestionFecha').value;
+      const medio = document.getElementById('gestionMedio').value;
+      const comentario = document.getElementById('gestionComentario').value;
+
+      if (!fecha || !medio) {
+        alert('Completa fecha y medio');
+        return;
+      }
+
+      try {
+        await supabase.insertGestion(currentFacturaId, fecha, medio, comentario);
+
+        // Recargar gestiones
+        const gestiones = await supabase.getGestiones(currentFacturaId);
+        renderGestiones(gestiones);
+
+        // Limpiar formulario
+        document.getElementById('gestionFecha').valueAsDate = new Date();
+        document.getElementById('gestionMedio').value = '';
+        document.getElementById('gestionComentario').value = '';
+      } catch (err) {
+        alert('Error guardando gestión: ' + err.message);
+      }
+    }
+
+    async function cambiarEstado(facturaId, nuevoEstado) {
+      try {
+        await supabase.updateEstado(facturaId, nuevoEstado);
+        estados[facturaId] = nuevoEstado;
+        renderTable();
+        updateStats();
+      } catch (err) {
+        alert('Error actualizando estado: ' + err.message);
+      }
+    }
+
+    // ============ EVENT LISTENERS ============
+    document.getElementById('filterEmpresa').addEventListener('input', () => {
+      renderTable();
+      updateStats();
+    });
+    document.getElementById('filterLocal').addEventListener('input', () => {
+      renderTable();
+      updateStats();
+    });
+    document.getElementById('filterEstado').addEventListener('change', () => {
+      renderTable();
+      updateStats();
+    });
+    document.getElementById('filterDias').addEventListener('change', () => {
+      renderTable();
+      updateStats();
+    });
+
+    // ============ INIT ============
+    loadData();
+  </script>
+</body>
+</html>
