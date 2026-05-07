@@ -530,8 +530,12 @@
         });
 
         gestionesData.forEach(g => {
-          if (!gestiones[g.factura_id] || new Date(g.fecha) > new Date(gestiones[g.factura_id])) {
-            gestiones[g.factura_id] = g.fecha;
+          if (!gestiones[g.factura_id] || new Date(g.fecha) > new Date(gestiones[g.factura_id].fecha)) {
+            gestiones[g.factura_id] = {
+              fecha: g.fecha,
+              medio: g.medio,
+              comentario: g.comentario
+            };
           }
         });
 
@@ -556,7 +560,7 @@
       tbody.innerHTML = filtered.map(f => {
         const estado = estados[f.id] || 'activa';
         const diasClass = f.dias >= 30 ? 'dias-high' : f.dias >= 5 ? 'dias-medium' : 'dias-low';
-        const lastGestion = gestiones[f.id] || '-';
+        const lastGestion = gestiones[f.id]?.fecha || '-';
 
         return `
           <tr>
@@ -723,13 +727,14 @@
         return;
       }
 
-      const headers = ['Factura', 'Días', 'Empresa', 'Importe', 'Última Gestión', 'Estado', 'Forma', 'Plazo'];
+      const headers = ['Factura', 'Días', 'Empresa', 'Importe', 'Última Gestión', 'Comentario', 'Estado', 'Forma', 'Plazo'];
       const rows = filtered.map(f => [
         f.id,
         f.dias,
         f.empresa,
         parseFloat(f.importe).toFixed(2),
-        gestiones[f.id] || '-',
+        gestiones[f.id]?.fecha || '-',
+        gestiones[f.id]?.comentario || '-',
         estados[f.id] || 'activa',
         f.forma,
         f.plazo
